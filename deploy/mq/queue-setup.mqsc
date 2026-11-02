@@ -1,0 +1,6 @@
+* For the developer queue manager only; run through runmqsc QM1.
+* IBM MQ developer image already supplies DEV.QUEUE.1 and DEV.QUEUE.2.
+DISPLAY QLOCAL('DEV.QUEUE.1')
+DISPLAY QLOCAL('DEV.QUEUE.2')
+DISPLAY QLOCAL('DEV.QUEUE.3')
+DISPLAY CHANNEL('DEV.APP.SVRCONN')

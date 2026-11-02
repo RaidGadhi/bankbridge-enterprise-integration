@@ -1,0 +1,6 @@
+{
+  "from_account": "DEMO-100",
+  "to_account": "DEMO-200",
+  "amount": "500.00",
+  "currency": "SAR"
+}

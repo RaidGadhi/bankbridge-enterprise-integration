@@ -1,0 +1,24 @@
+-- IBM ACE Toolkit example: install into a Compute node named ValidateAndMap.
+-- Validates a JSON request and produces the canonical JSON for an MQOutput node.
+-- Not an importable .bar; see docs/runbooks/ibm-ace.md for Toolkit wiring.
+CREATE COMPUTE MODULE ValidateAndMap_Compute
+  CREATE FUNCTION Main() RETURNS BOOLEAN
+  BEGIN
+    IF InputRoot.JSON.Data.from_account IS NULL OR
+       InputRoot.JSON.Data.to_account IS NULL OR
+       InputRoot.JSON.Data.amount IS NULL THEN
+      THROW USER EXCEPTION CATALOG 'BankBridge' MESSAGE 3001
+        VALUES('Missing payment fields');
+    END IF;
+    SET OutputRoot.Properties = InputRoot.Properties;
+    SET OutputRoot.MQMD = InputRoot.MQMD;
+    SET OutputRoot.JSON.Data.schema_version = 1;
+    SET OutputRoot.JSON.Data.event_type = 'payment.requested';
+    SET OutputRoot.JSON.Data.transfer_id = CAST(InputRoot.JSON.Data.transfer_id AS CHARACTER);
+    SET OutputRoot.JSON.Data.from_account = CAST(InputRoot.JSON.Data.from_account AS CHARACTER);
+    SET OutputRoot.JSON.Data.to_account = CAST(InputRoot.JSON.Data.to_account AS CHARACTER);
+    SET OutputRoot.JSON.Data.amount = CAST(InputRoot.JSON.Data.amount AS CHARACTER);
+    SET OutputRoot.JSON.Data.currency = 'SAR';
+    RETURN TRUE;
+  END;
+END MODULE;

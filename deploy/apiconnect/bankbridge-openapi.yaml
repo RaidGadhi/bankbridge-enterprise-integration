@@ -1,0 +1,56 @@
+openapi: 3.0.3
+info:
+  title: BankBridge Payment API
+  version: 1.0.0
+  description: Synthetic banking integration API; no real financial transfers.
+servers:
+  - url: https://bankbridge.example.invalid
+security:
+  - GatewayApiKey: []
+paths:
+  /v1/transfers:
+    post:
+      summary: Submit a synthetic payment
+      operationId: createTransfer
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, minLength: 8, maxLength: 128}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Payment'}
+      responses:
+        '202': {description: Accepted, payment is asynchronous}
+        '401': {description: Authentication required}
+        '409': {description: Conflicting idempotency key}
+        '422': {description: Invalid request}
+  /v1/transfers/{transfer_id}:
+    get:
+      summary: Check payment status
+      parameters:
+        - name: transfer_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200': {description: Payment status}
+        '404': {description: Payment not found}
+components:
+  securitySchemes:
+    GatewayApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    Payment:
+      type: object
+      additionalProperties: false
+      required: [from_account, to_account, amount, currency]
+      properties:
+        from_account: {type: string, example: DEMO-100}
+        to_account: {type: string, example: DEMO-200}
+        amount: {type: string, pattern: '^\d+\.\d{2}$', example: '500.00'}
+        currency: {type: string, enum: [SAR]}

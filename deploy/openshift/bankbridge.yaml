@@ -1,0 +1,77 @@
+# Demonstration manifests: external PostgreSQL required, do not paste real secrets here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bankbridge-settings
+data:
+  ALLOW_DEMO_SEED: "false"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankbridge-api
+  labels: {app: bankbridge-api}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: bankbridge-api}
+  template:
+    metadata:
+      labels: {app: bankbridge-api}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          # Supply a real pushed image, not this illustrative placeholder.
+          image: registry.example.invalid/bankbridge/api:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports: [{containerPort: 8000, name: http}]
+          envFrom:
+            - secretRef: {name: bankbridge-secrets}
+            - configMapRef: {name: bankbridge-settings}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health/live, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankbridge-api
+spec:
+  selector: {app: bankbridge-api}
+  ports: [{port: 80, targetPort: 8000, name: http}]
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: bankbridge-api
+spec:
+  to: {kind: Service, name: bankbridge-api}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bankbridge-restricted-ingress
+spec:
+  podSelector:
+    matchLabels: {app: bankbridge-api}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports: [{protocol: TCP, port: 8000}]
