@@ -1,4 +1,4 @@
-# BankBridge — Enterprise Banking Integration Platform
+# BankBridge: Enterprise Banking Integration Platform
 
 **A runnable, synthetic payment integration reference implementation combining a transactional banking ledger, durable outbox, optional IBM MQ JMS processing, optional IBM Event Streams/Kafka publishing, and OpenShift deployment templates.**
 
